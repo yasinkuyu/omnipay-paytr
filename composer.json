@@ -1,0 +1,43 @@
+{
+    "name": "yasinkuyu/omnipay-paytr",
+    "type": "library",
+    "description": "PayTR (Yapı Kredi, Vakıfbank, Anadolubank sanal pos) gateway for Omnipay payment processing library",
+    "keywords": [
+        "paytr",
+        "yapıkredi bankası",
+        "sanal pos",
+        "gateway",
+        "merchant",
+        "omnipay",
+        "pay",
+        "payment"
+    ],
+    "homepage": "https://github.com/yasinkuyu/omnipay-paytr",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Yasin Kuyu",
+            "email": "yasinkuyu@gmail.com"
+        },
+        {
+            "name": "Omnipay Contributors",
+            "homepage": "https://github.com/yasinkuyu/omnipay-paytr/contributors"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Omnipay\\PayTR\\": "src/"
+        }
+    },
+    "require": {
+        "omnipay/common": "~2.0"
+    },
+    "require-dev": {
+        "omnipay/tests": "~2.0"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0.x-dev"
+        }
+    }
+}
