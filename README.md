@@ -13,21 +13,6 @@ processing library for PHP 5.3+. This package implements PayTR (Turkish Payment 
 
 PayTR (Bonus, World, Axess, Cardfinans, Maximum, AsyaCard, Paraf) sanal pos hizmeti için omnipay kütüphanesi.
 
-## Manuel Installation
-
-###### Clone project
-	git clone https://github.com/yasinkuyu/omnipay-paytr.git omnipay-paytr-example
-
-###### Go to project directory
-	cd omnipay-paytr-example
-
-###### Install dependencies
-	composer install
-
-###### Run using the built-in PHP web server
-	php -S localhost:8000 
-
-	
 ## Composer Installation
 
 ###### Create directory
@@ -42,11 +27,22 @@ PayTR (Bonus, World, Axess, Cardfinans, Maximum, AsyaCard, Paraf) sanal pos hizm
 ###### Run using the built-in PHP web server
 	php -S localhost:8000 
 
-	
-## Basic Usage
 
-The following gateways are provided by this package:
+## (or) Manual Installation
 
+###### Clone project
+	git clone https://github.com/yasinkuyu/omnipay-paytr.git omnipay-paytr-example
+
+###### Go to project directory
+	cd omnipay-paytr-example
+
+###### Install dependencies
+	composer install
+
+###### Run using the built-in PHP web server
+	php -S localhost:8000 
+
+		 
 * PayTR
     - Bonus
     - World
@@ -59,17 +55,14 @@ The following gateways are provided by this package:
 Gateway Methods
 
 * purchase($options) - authorize and immediately capture an amount on the customer's card
-
-For general usage instructions, please see the main [Omnipay](https://github.com/thephpleague/omnipay)
-repository.
-
-## Unit Tests
-
-PHPUnit is a programmer-oriented testing framework for PHP. It is an instance of the xUnit architecture for unit testing frameworks.
-
+ 
+ 
 ## Sample App
-         
-
+     
+## Posnet
+Posnet (Yapı Kredi, Vakıfbank, Anadolubank) gateway for Omnipay payment processing library
+https://github.com/yasinkuyu/omnipay-posnet
+    
 ## NestPay (EST)
 (İş Bankası, Akbank, Finansbank, Denizbank, Kuveytturk, Halkbank, Anadolubank, ING Bank, Citibank, Cardplus) gateway for Omnipay payment processing library
 https://github.com/yasinkuyu/omnipay-nestpay
@@ -87,14 +80,3 @@ BKM Express gateway for Omnipay payment processing library
 https://github.com/yasinkuyu/omnipay-bkm
 
 
-## Support
-
-If you are having general issues with Omnipay, we suggest posting on
-[Stack Overflow](http://stackoverflow.com/). Be sure to add the
-[omnipay tag](http://stackoverflow.com/questions/tagged/omnipay) so it can be easily found.
-
-If you want to keep up to date with release anouncements, discuss ideas for the project, or ask more detailed questions, there is also a [mailing list](https://groups.google.com/forum/#!forum/omnipay) which
-you can subscribe to.
-
-If you believe you have found a bug, please report it using the [GitHub issue tracker](https://github.com/yasinkuyu/omnipay-paytr/issues),
-or better yet, fork the library and submit a pull request.
