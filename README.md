@@ -15,31 +15,31 @@ PayTR (Bonus, World, Axess, Cardfinans, Maximum, AsyaCard, Paraf) sanal pos hizm
 
 ## Manuel Installation
 
-Clone project
+###### Clone project
 	git clone https://github.com/yasinkuyu/omnipay-paytr.git omnipay-paytr-example
 
-Go to project directory
+###### Go to project directory
 	cd omnipay-paytr-example
 
-Install dependencies
+###### Install dependencies
 	composer install
 
-Run using the built-in PHP web server
+###### Run using the built-in PHP web server
 	php -S localhost:8000 
 
 	
 ## Composer Installation
 
-Create directory
+###### Create directory
 	mkdir omnipay-paytr-example
 
-Go to directory
+###### Go to directory
 	cd omnipay-paytr-example
 
-Install composer package
+###### Install composer package
 	composer require yasinkuyu/omnipay-paytr
 
-Run using the built-in PHP web server
+###### Run using the built-in PHP web server
 	php -S localhost:8000 
 
 	
