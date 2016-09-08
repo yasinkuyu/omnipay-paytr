@@ -26,12 +26,10 @@ class Response extends AbstractResponse implements RedirectResponseInterface {
     public function __construct(RequestInterface $request, $data) {
         $this->request = $request;
         try {
-            $this->data = (array) simplexml_load_string($data);
+            $this->data = json_decode($data,1);
         } catch (\Exception $ex) {
             throw new InvalidResponseException();
         }
-        echo $data;
-        die();
     }
 
     /**
@@ -40,8 +38,8 @@ class Response extends AbstractResponse implements RedirectResponseInterface {
      * @return bool
      */
     public function isSuccessful() {
-        if (isset($this->data["approved"])) {
-            return (string) $this->data["approved"] === '1';
+        if (isset($this->data["status"])) {
+            return (string) $this->data["status"] === 'success';
         } else {
             return false;
         }
@@ -62,7 +60,7 @@ class Response extends AbstractResponse implements RedirectResponseInterface {
      * @return string|null code
      */
     public function getCode() {
-        return $this->isSuccessful() ? $this->data["authCode"] : parent::getCode();
+        return $this->isSuccessful() ? $this->data["reason"] : parent::getCode();
     }
 
     /**
@@ -72,7 +70,7 @@ class Response extends AbstractResponse implements RedirectResponseInterface {
      */
     public function getTransactionReference() {
 
-        return $this->isSuccessful() ? $this->data["hostlogkey"] : '';
+        return $this->isSuccessful() ? $this->data["token"] : '';
     }
 
     /**
@@ -82,13 +80,9 @@ class Response extends AbstractResponse implements RedirectResponseInterface {
      */
     public function getMessage() {
         if ($this->isSuccessful()) {
-            $moneyPoints = $this->data["pointInfo"]->pointAmount;
-            if (!empty($moneyPoints))
-                return (string) $this->data["approved"] . '. Available money points : ' . $moneyPoints;
-            else
-                return $this->data["approved"] == '1' ? "Approved " : "";
+			return $this->data["token"];
         }
-        return $this->data["respText"];
+        return $this->data["reason"];
     }
 
     /**
@@ -97,7 +91,7 @@ class Response extends AbstractResponse implements RedirectResponseInterface {
      * @return string
      */
     public function getError() {
-        return $this->data["respText"];
+        return $this->data["reason"];
     }
 
     /**

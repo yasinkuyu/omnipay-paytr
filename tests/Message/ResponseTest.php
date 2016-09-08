@@ -29,7 +29,6 @@ class ResponseTest extends TestCase
         $this->assertTrue($response->isSuccessful());
         $this->assertEquals('130215141054377801316798', $response->getTransactionReference());
         $this->assertSame('AuthCode: 672167', $response->getMessage());
-        $this->assertEmpty($response->getRedirectUrl());
     }
 
     public function testPurchaseFailure()
@@ -53,10 +52,8 @@ class ResponseTest extends TestCase
 
         $this->assertTrue($response->isRedirect());
         $this->assertSame('POST', $response->getRedirectMethod());
-        $this->assertSame('http://sanalmagaza.org/', $response->getRedirectUrl());
 
         $expectedData = array(
-            'ReturnUrl' => 'http://sanalmagaza.org/',
             'ReferanceId' => '130215141054377801316798'
         );
         $this->assertEquals($expectedData, $response->getRedirectData());

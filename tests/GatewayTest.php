@@ -19,8 +19,9 @@ class GatewayTest extends GatewayTestCase
         $this->gateway = new Gateway($this->getHttpClient(), $this->getHttpRequest());
 
         $this->options = array(
-            'merchantId' => '6700000067',
-            'terminalId' => '67000067',
+            'merchantNo' => '222111',
+            'merchantKey' => 'wwNlhCPy4Gsu8874',
+            'merchantSalt' => 'E9JsrTSYn5GrzsIQ',
             'testmode' => 'true',
             'amount' => 10.00,
             'currency' => 'TRY',

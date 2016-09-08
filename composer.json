@@ -1,16 +1,10 @@
 {
     "name": "yasinkuyu/omnipay-paytr",
     "type": "library",
-    "description": "PayTR (Bonus, World, Axess, Cardfinans, Maximum, AsyaCard, Paraf sanal pos) gateway for Omnipay payment processing library",
+    "description": "PayTR (Yapı Kredi, Vakıfbank, Anadolubank sanal pos) gateway for Omnipay payment processing library",
     "keywords": [
         "paytr",
-        "Bonus",
-        "World",
-        "Axess",
-        "Maximum",
-        "AsyaCard",
-        "Paraf",
-        "Cardfinans",
+        "yapıkredi bankası",
         "sanal pos",
         "gateway",
         "merchant",

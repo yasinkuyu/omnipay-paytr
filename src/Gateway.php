@@ -8,7 +8,7 @@ use Omnipay\Common\AbstractGateway;
  * PayTR Gateway
  * 
  * (c) Yasin Kuyu
- * 2015, insya.com
+ * 2016, insya.com
  * http://www.github.com/yasinkuyu/omnipay-paytr
  */
 class Gateway extends AbstractGateway {
@@ -19,12 +19,13 @@ class Gateway extends AbstractGateway {
 
     public function getDefaultParameters() {
         return array(
-            'merchantId' => '',
-            'terminalId' => '',
-            'installment' => '00',
-            'type' => 'sale',
-            'currency' => 'TRY',
-            'testMode' => false
+            'merchantNo'   => '',
+            'merchantKey'  => '',
+            'merchantSalt' => '',
+            'installment'  => '9',
+            'ip' 		   => $_SERVER['REMOTE_ADDR'],
+            'currency' 	   => 'TRY',
+            'testMode'     => false
         );
     }
 
@@ -48,20 +49,28 @@ class Gateway extends AbstractGateway {
         return $this->createRequest('\Omnipay\PayTR\Message\VoidRequest', $parameters);
     }
 
-    public function getMerchantId() {
-        return $this->getParameter('merchantId');
+    public function getMerchantNo() {
+        return $this->getParameter('merchantNo');
     }
 
-    public function setMerchantId($value) {
-        return $this->setParameter('merchantId', $value);
+    public function setMerchantNo($value) {
+        return $this->setParameter('merchantNo', $value);
     }
 
-    public function getTerminalId() {
-        return $this->getParameter('terminalId');
+    public function getMerchantKey() {
+        return $this->getParameter('merchantKey');
     }
 
-    public function setTerminalId($value) {
-        return $this->setParameter('terminalId', $value);
+    public function setMerchantKey($value) {
+        return $this->setParameter('merchantKey', $value);
+    }
+
+    public function getMerchantSalt() {
+        return $this->getParameter('merchantSalt');
+    }
+
+    public function setMerchantSalt($value) {
+        return $this->setParameter('merchantSalt', $value);
     }
 
     public function getInstallment() {
@@ -72,12 +81,12 @@ class Gateway extends AbstractGateway {
         return $this->setParameter('installment', $value);
     }
 
-    public function getType() {
-        return $this->getParameter('type');
+    public function getIp() {
+        return $this->getParameter('ip');
     }
 
-    public function setType($value) {
-        return $this->setParameter('type', $value);
+    public function setIp($value) {
+        return $this->setParameter('ip', $value);
     }
 
     public function getOrderId() {
@@ -94,22 +103,6 @@ class Gateway extends AbstractGateway {
 
     public function setTransId($value) {
         return $this->setParameter('transId', $value);
-    }
-
-    public function getExtraPoint() {
-        return $this->getParameter('extrapoint');
-    }
-
-    public function setExtraPoint($value) {
-        return $this->setParameter('extrapoint', $value);
-    }
-
-    public function getMultiplePoint() {
-        return $this->getParameter('multiplePoint');
-    }
-
-    public function setMultiplePoint($value) {
-        return $this->setParameter('multiplePoint', $value);
     }
 
 }

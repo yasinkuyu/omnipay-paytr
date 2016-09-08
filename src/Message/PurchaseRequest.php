@@ -2,7 +2,6 @@
 
 namespace Omnipay\PayTR\Message;
 
-use DOMDocument;
 use Omnipay\Common\Message\AbstractRequest;
 
 /**
@@ -16,9 +15,7 @@ class PurchaseRequest extends AbstractRequest {
     
     protected $endpoint = '';
     protected $endpoints = array(
-        'test'       => 'http://setmpos.ykb.com/PosnetWebService/XML',
-        'purchase'   => 'https://www.paytr.ykb.com/PosnetWebService/XML',
-        '3d'         => 'https://www.paytr.ykb.com/3DSWebService/YKBPaymentService'
+        'purchase'   => 'https://www.paytr.com/odeme/api/get-token'
     );
  
     protected $currencies = [
@@ -29,90 +26,157 @@ class PurchaseRequest extends AbstractRequest {
 
     public function getData() {
 
-        $this->validate('card');
-        $this->getCard()->validate();
+        //$this->validate('card');
+        //$this->validate('apiKey', 'paymentData');
+        //$this->getCard()->validate();
         $currency = $this->getCurrency();
 
         $data['orderID'] = $this->getOrderId();
         $data['currencyCode'] = $this->currencies[$currency];
         $data['installment'] = $this->getInstallment();
         
-        $data['extraPoint'] = $this->getExtraPoint();
-        $data['multiplePoint'] = $this->getMultiplePoint();
-        
         $data['amount'] = $this->getAmountInteger();
-        $data['ccno'] = $this->getCard()->getNumber();
-        $data['expDate'] = $this->getCard()->getExpiryDate('my');
-        $data["cvc"] = $this->getCard()->getCvv();
  
         return $data;
     }
 
     public function sendData($data) {
-
-        $document = new DOMDocument('1.0', 'UTF-8');
-        $root = $document->createElement('posnetRequest');
-
-        $root->appendChild($document->createElement('mid', $this->getMerchantId()));
-        $root->appendChild($document->createElement('tid', $this->getTerminalId()));
-
-        // Each array element 
-        $ossRequest = $document->createElement($this->getType());
-        foreach ($data as $id => $value) {
-            $ossRequest->appendChild($document->createElement($id, $value));
-        }
-
-        $root->appendChild($ossRequest);
-        
-        $document->appendChild($root);
-
+ 
         // Post to PayTR
         $headers = array(
             'Content-Type' => 'application/x-www-form-urlencoded'
         );
 
+		
+$merchant_id       = $this->getMerchantNo(); // Mağaza numarası
+$merchant_key      = $this->getMerchantKey(); // Mağaza Parolası - Mağaza paneline giriş yaparak BİLGİ sayfasından alabilirsiniz.
+$merchant_salt     = $this->getMerchantSalt(); // Mağaza Gizli Anahtarı - Mağaza paneline giriş yaparak BİLGİ sayfasından alabilirsiniz.
+
+$user_ip 	       = "31.145.128.50"; //;$_SERVER['REMOTE_ADDR']; //!!! Eğer bu kodu sunucuda değil local makinanızda çalıştırıyorsanız buraya dış ip adresinizi(https://www.whatismyip.com/) yazmalısınız. 
+$merchant_oid      = time(); //sipariş numarası: her işlemde benzersiz olmalıdır! Bu bilgi bildirim sayfanıza yapılacak bildirimde gönderilir.
+$email             = "musteri@saglayici.com"; // Müşterinizin sitenizde kayıtlı eposta adresi
+$payment_amount    = "999";//9.99 TL
+
+$no_installment    = 0; // Taksit yapılmasını istemiyorsanız (Örn cep telefonu satışı) 1 yapın
+$max_installment   = 9; // Sayfada görüntülenecek taksit adedini sınırlamak istiyorsanız (Örn altın vb kuyum satışı max 4 taksittir) uygun şekilde değiştirin.
+$user_name         = "MusteriAdı MusteriSoyAdı"; // Müşterinizin sitenizde kayıtlı ad soyad bilgisi
+$user_address      = "Müşterinizin açık adresi"; // Müşterinizin sitenizde kayıtlı adres bilgisi
+$user_phone        = "05XXXXXXXXX"; // // Müşterinizin sitenizde kayıtlı telefon bilgisi
+
+$merchant_ok_url   = "http://local.desktop/omnipay-paytr-test/paytr-test.php?ok"; // Başarılı ödeme sonrası müşterinizin yönlendirileceği sayfa
+$merchant_fail_url = "http://local.desktop/omnipay-paytr-test/paytr-test.php?err"; // Ödeme sürecinde beklenmedik bir hata oluşması durumunda müşterinizin yönlendirileceği sayfa
+
+// Müşterinin sepet içeriği - Ürün adedine göre çoğaltabilirsiniz
+$user_basket       = base64_encode(json_encode(array(
+	array("Örnek ürün 1", "18.00", 1), // 1. ürün (Adı - Birim Fiyatı - Adeti )
+	array("Örnek ürün 2", "33.25", 2), // 2. ürün (Adı - Birim Fiyatı - Adeti )
+	array("Örnek ürün 3", "45.42", 1) // 3. ürün (Adı - Birim Fiyatı - Adeti )
+	)));
+
+$debug_on          = 1 ;//hata mesajlarının ekrana basılması için entegrasyon sürecinde 1 olarak bırakın. Daha sonra 0 yapabilirsiniz.
+//$debug_on        = $this->getTestMode() ? 1 : 0;
+
+
+$hash_str          = $merchant_id .$user_ip .$merchant_oid .$email .$payment_amount .$user_basket.$no_installment.$max_installment;
+$paytr_token       = base64_encode(hash_hmac('sha256',$hash_str.$merchant_salt,$merchant_key,true));
+
+$post_vals = array(
+	'merchant_id'      =>$merchant_id,
+	'user_ip'          =>$user_ip,
+	'merchant_oid'     =>$merchant_oid,
+	'email'            =>$email,
+	'payment_amount'   =>$payment_amount,
+	'paytr_token'      =>$paytr_token,
+	'user_basket'      =>$user_basket,
+	'debug_on'         =>$debug_on,
+	'no_installment'   =>$no_installment,
+	'max_installment'  =>$max_installment,
+	'user_name'        =>$user_name,
+	'user_address'     =>$user_address,
+	'user_phone'       =>$user_phone,
+	'merchant_ok_url'  =>$merchant_ok_url,
+	'merchant_fail_url'=>$merchant_fail_url
+);
+/*
         // Register the payment
         $this->httpClient->setConfig(array(
             'curl.options' => array(
-                'CURLOPT_SSL_VERIFYHOST' => 2,
-                'CURLOPT_SSLVERSION' => 0,
+                'CURLOPT_SSL_VERIFYHOST' => 0,
+                'CURLOPT_SSL_VERIFYHOST' => 0,
                 'CURLOPT_SSL_VERIFYPEER' => 0,
                 'CURLOPT_RETURNTRANSFER' => 1,
+                'CURLOPT_FRESH_CONNECT' => true,
+                'CURLOPT_TIMEOUT' => 20,
+                'CURLOPT_POSTFIELDS' => $post_vals,
                 'CURLOPT_POST' => 1
             )
         ));
        
-        $xml = "xmldata=".$document->saveXML();
+        //$xml = "xmldata=".$document->saveXML();
+        $xml = "";
         
-        $this->endpoint = $this->getTestMode() ? $this->endpoints['test'] : $this->endpoints['purchase'];
+        $this->endpoint = $this->endpoints['purchase'];
         
-        $httpResponse = $this->httpClient->post($this->endpoint, $headers, $xml)->send();
+        $httpResponse = $this->httpClient->post($this->endpoint, $headers, $xml)->send();*/
 
-        return $this->response = new Response($this, $httpResponse->getBody());
+        // return $this->response = new Response($this, $httpResponse->getBody());
+	    
+		$ch = curl_init();
+		
+		curl_setopt($ch, CURLOPT_URL, $this->endpoints['purchase']);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_POST, 1) ;
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $post_vals);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+		curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+		
+		$result = @curl_exec($ch);
+		  
+		curl_close($ch);
+
+        return $this->response = new Response($this, $result);
     }
     
-    public function getMerchantId() {
-        return $this->getParameter('merchantId');
+    public function getMerchantNo() {
+        return $this->getParameter('merchantNo');
     }
 
-    public function setMerchantId($value) {
-        return $this->setParameter('merchantId', $value);
+    public function setMerchantNo($value) {
+        return $this->setParameter('merchantNo', $value);
+    }
+ 
+    public function getMerchantKey() {
+        return $this->getParameter('merchantKey');
     }
 
-    public function getTerminalId() {
-        return $this->getParameter('terminalId');
+    public function setMerchantKey($value) {
+        return $this->setParameter('merchantKey', $value);
+    }
+ 
+    public function getMerchantSalt() {
+        return $this->getParameter('merchantSalt');
     }
 
-    public function setTerminalId($value) {
-        return $this->setParameter('terminalId', $value);
+    public function setMerchantSalt($value) {
+        return $this->setParameter('merchantSalt', $value);
     }
-
+  
     public function getInstallment() {
         return $this->getParameter('installment');
     }
 
     public function setInstallment($value) {
         return $this->setParameter('installment', $value);
+    }
+
+    public function getIp() {
+        return $this->getParameter('ip');
+    }
+
+    public function setIp($value) {
+        return $this->setParameter('ip', $value);
     }
 
     public function getType() {
@@ -137,22 +201,6 @@ class PurchaseRequest extends AbstractRequest {
 
     public function setOrderId($value) {
         return $this->setParameter('orderid', $value);
-    }
-
-    public function getExtraPoint() {
-        return $this->getParameter('extrapoint');
-    }
-
-    public function setExtraPoint($value) {
-        return $this->setParameter('extrapoint', $value);
-    }
-
-    public function getMultiplePoint() {
-        return $this->getParameter('multiplePoint');
-    }
-
-    public function setMultiplePoint($value) {
-        return $this->setParameter('multiplePoint', $value);
     }
 
 }

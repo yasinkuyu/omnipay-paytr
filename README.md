@@ -13,8 +13,6 @@ processing library for PHP 5.3+. This package implements PayTR (Turkish Payment 
 
 PayTR (Yapı Kredi, Vakıfbank, Anadolubank) sanal pos hizmeti için omnipay kütüphanesi.
 
-(Türkçe açıklamalar için http://yasinkuyu.net/omnipay-coklu-odeme-sistemi)
-
 ## Installation
 
 Omnipay is installed via [Composer](http://getcomposer.org/). To install, simply add it
@@ -62,8 +60,84 @@ repository.
 PHPUnit is a programmer-oriented testing framework for PHP. It is an instance of the xUnit architecture for unit testing frameworks.
 
 ## Sample App
-         
+        <?php 
 
+        use Omnipay\Omnipay;
+
+		$gateway = Omnipay::create('PayTR');
+
+		$gateway->setMerchantNo("6700000067");
+		$gateway->setMerchantKey("67000067");
+		$gateway->setMerchantSalt("67000067");
+		$gateway->setTestMode(TRUE);
+
+		$options = [
+			'number'        => '4506341010205499',
+			'expiryMonth'   => '03',
+			'expiryYear'    => '2017',
+			'cvv'           => '000'
+		];
+
+		$response = $gateway->purchase(
+		[
+			//'installment'  => '2', # Taksit
+			//'multiplepoint' => 1, // Set money points (Maxi puan gir)
+			//'extrapoint'   => 150, // Set money points (Maxi puan gir)
+			'amount'        => 10.00,
+			'type'          => 'sale',
+			'orderid'       => '1s3456z89012345678901234',
+			'card'          => $options
+		]
+		)->send();
+
+		$response = $gateway->authorize(
+		[
+			'type'          => 'auth',
+			'transId'       => 'ORDER-365123',
+			'card'          => $options
+		]
+		)->send();
+
+		$response = $gateway->capture(
+		[
+			'type'          => 'capt',
+			'transId'       => 'ORDER-365123',
+			'amount'        => 1.00,
+			'currency'      => 'TRY',
+			'card'          => $options
+		]
+		)->send();
+
+		$response = $gateway->refund(
+		[
+			'type'          => 'return',
+			'transId'       => 'ORDER-365123',
+			'amount'        => 1.00,
+			'currency'      => 'TRY',
+			'card'          => $options
+		]
+		)->send();
+
+		$response = $gateway->void(
+		[
+			'type'          => 'reverse',
+			'transId'       => 'ORDER-365123',
+			'authcode'      => '123123',
+			'amount'        => 1.00,
+			'currency'      => 'TRY',
+			'card'          => $options
+		]
+		)->send();
+
+		if ($response->isSuccessful()) {
+			//echo $response->getTransactionReference();
+			echo $response->getMessage();
+		} else {
+			echo $response->getError();
+		}
+
+		// Debug
+		//var_dump($response);
 
 ## NestPay (EST)
 (İş Bankası, Akbank, Finansbank, Denizbank, Kuveytturk, Halkbank, Anadolubank, ING Bank, Citibank, Cardplus) gateway for Omnipay payment processing library
