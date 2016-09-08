@@ -29,6 +29,7 @@ class PurchaseRequest extends AbstractRequest {
         //$this->validate('card');
         //$this->validate('apiKey', 'paymentData');
         //$this->getCard()->validate();
+		 
         $currency = $this->getCurrency();
 
         $data['orderID'] = $this->getOrderId();
@@ -36,26 +37,28 @@ class PurchaseRequest extends AbstractRequest {
         $data['installment'] = $this->getInstallment();
         
         $data['amount'] = $this->getAmountInteger();
+        $data["IPAddress"] = $this->getClientIp();
  
         return $data;
     }
 
     public function sendData($data) {
  
+ 
+		if( isset( $_GET["return"] )){
+			echo "ok";die();
+		}
+  
         // Post to PayTR
         $headers = array(
             'Content-Type' => 'application/x-www-form-urlencoded'
         );
 
-		
-$merchant_id       = $this->getMerchantNo(); // Mağaza numarası
-$merchant_key      = $this->getMerchantKey(); // Mağaza Parolası - Mağaza paneline giriş yaparak BİLGİ sayfasından alabilirsiniz.
-$merchant_salt     = $this->getMerchantSalt(); // Mağaza Gizli Anahtarı - Mağaza paneline giriş yaparak BİLGİ sayfasından alabilirsiniz.
 
 $user_ip 	       = "31.145.128.50"; //;$_SERVER['REMOTE_ADDR']; //!!! Eğer bu kodu sunucuda değil local makinanızda çalıştırıyorsanız buraya dış ip adresinizi(https://www.whatismyip.com/) yazmalısınız. 
 $merchant_oid      = time(); //sipariş numarası: her işlemde benzersiz olmalıdır! Bu bilgi bildirim sayfanıza yapılacak bildirimde gönderilir.
 $email             = "musteri@saglayici.com"; // Müşterinizin sitenizde kayıtlı eposta adresi
-$payment_amount    = "999";//9.99 TL
+$payment_amount    = $this->getAmountInteger();//9.99 TL
 
 $no_installment    = 0; // Taksit yapılmasını istemiyorsanız (Örn cep telefonu satışı) 1 yapın
 $max_installment   = 9; // Sayfada görüntülenecek taksit adedini sınırlamak istiyorsanız (Örn altın vb kuyum satışı max 4 taksittir) uygun şekilde değiştirin.
@@ -63,39 +66,33 @@ $user_name         = "MusteriAdı MusteriSoyAdı"; // Müşterinizin sitenizde k
 $user_address      = "Müşterinizin açık adresi"; // Müşterinizin sitenizde kayıtlı adres bilgisi
 $user_phone        = "05XXXXXXXXX"; // // Müşterinizin sitenizde kayıtlı telefon bilgisi
 
-$merchant_ok_url   = "http://local.desktop/omnipay-paytr-test/paytr-test.php?ok"; // Başarılı ödeme sonrası müşterinizin yönlendirileceği sayfa
-$merchant_fail_url = "http://local.desktop/omnipay-paytr-test/paytr-test.php?err"; // Ödeme sürecinde beklenmedik bir hata oluşması durumunda müşterinizin yönlendirileceği sayfa
-
-// Müşterinin sepet içeriği - Ürün adedine göre çoğaltabilirsiniz
 $user_basket       = base64_encode(json_encode(array(
 	array("Örnek ürün 1", "18.00", 1), // 1. ürün (Adı - Birim Fiyatı - Adeti )
 	array("Örnek ürün 2", "33.25", 2), // 2. ürün (Adı - Birim Fiyatı - Adeti )
 	array("Örnek ürün 3", "45.42", 1) // 3. ürün (Adı - Birim Fiyatı - Adeti )
-	)));
+)));
 
-$debug_on          = 1 ;//hata mesajlarının ekrana basılması için entegrasyon sürecinde 1 olarak bırakın. Daha sonra 0 yapabilirsiniz.
-//$debug_on        = $this->getTestMode() ? 1 : 0;
+$hash_str          = $this->getMerchantNo() .$user_ip .$merchant_oid .$email .$payment_amount .$user_basket.$no_installment.$max_installment;
+$paytr_token       = base64_encode(hash_hmac('sha256',$hash_str.$this->getMerchantSalt(),$this->getMerchantKey(),true));
 
-
-$hash_str          = $merchant_id .$user_ip .$merchant_oid .$email .$payment_amount .$user_basket.$no_installment.$max_installment;
-$paytr_token       = base64_encode(hash_hmac('sha256',$hash_str.$merchant_salt,$merchant_key,true));
+$url = "http" . (($_SERVER['SERVER_PORT'] == 443) ? "s://" : "://") . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 
 $post_vals = array(
-	'merchant_id'      =>$merchant_id,
-	'user_ip'          =>$user_ip,
-	'merchant_oid'     =>$merchant_oid,
-	'email'            =>$email,
-	'payment_amount'   =>$payment_amount,
-	'paytr_token'      =>$paytr_token,
-	'user_basket'      =>$user_basket,
-	'debug_on'         =>$debug_on,
-	'no_installment'   =>$no_installment,
-	'max_installment'  =>$max_installment,
-	'user_name'        =>$user_name,
-	'user_address'     =>$user_address,
-	'user_phone'       =>$user_phone,
-	'merchant_ok_url'  =>$merchant_ok_url,
-	'merchant_fail_url'=>$merchant_fail_url
+	'merchant_id'      => $this->getMerchantNo(),
+	'user_ip'          => $user_ip,
+	'merchant_oid'     => $merchant_oid,
+	'email'            => $email,
+	'payment_amount'   => $payment_amount,
+	'paytr_token'      => $paytr_token,
+	'user_basket'      => $user_basket,
+	'debug_on'         => $this->getTestMode() ? 1 : 0,
+	'no_installment'   => $no_installment,
+	'max_installment'  => $max_installment,
+	'user_name'        => $user_name,
+	'user_address'     => $user_address,
+	'user_phone'       => $user_phone,
+	'merchant_ok_url'  => $url."?return=true",
+	'merchant_fail_url'=> $url."?return=false"
 );
 /*
         // Register the payment

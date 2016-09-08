@@ -125,5 +125,15 @@ class Response extends AbstractResponse implements RedirectResponseInterface {
     public function getRedirectData() {
         return null;
     }
+	
+    /**
+     * is complate url
+     *
+     * @return null
+     */
+    public function isComplateUrl() {
+
+	
+    }
 
 }
