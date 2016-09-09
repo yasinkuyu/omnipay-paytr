@@ -10,8 +10,10 @@
 [Omnipay](https://github.com/thephpleague/omnipay) is a framework agnostic, multi-gateway payment
 processing library for PHP 5.3+. This package implements PayTR (Turkish Payment Gateways) support for Omnipay.
 
-
 PayTR (Bonus, World, Axess, Cardfinans, Maximum, AsyaCard, Paraf) sanal pos hizmeti için omnipay kütüphanesi.
+
+(Türkçe açıklamalar için http://yasinkuyu.net/omnipay-coklu-odeme-sistemi)
+
 
 ## Composer Installation
 
