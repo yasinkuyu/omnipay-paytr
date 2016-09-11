@@ -23,6 +23,7 @@ class Gateway extends AbstractGateway {
             'merchantKey'  => '',
             'merchantSalt' => '',
             'installment'  => '9',
+            'no_installment'  => '0',
             'ip' 		   => $_SERVER['REMOTE_ADDR'],
             'currency' 	   => 'TRY',
             'testMode'     => false
@@ -32,21 +33,14 @@ class Gateway extends AbstractGateway {
     public function authorize(array $parameters = array()) {
         return $this->createRequest('\Omnipay\PayTR\Message\AuthorizeRequest', $parameters);
     }
-
-    public function capture(array $parameters = array()) {
-        return $this->createRequest('\Omnipay\PayTR\Message\CaptureRequest', $parameters);
-    }
-
+ 
     public function purchase(array $parameters = array()) {
         return $this->createRequest('\Omnipay\PayTR\Message\PurchaseRequest', $parameters);
     }
- 
-    public function refund(array $parameters = array()) {
-        return $this->createRequest('\Omnipay\PayTR\Message\RefundRequest', $parameters);
-    }
-
-    public function void(array $parameters = array()) {
-        return $this->createRequest('\Omnipay\PayTR\Message\VoidRequest', $parameters);
+  
+    public function complete(array $parameters = array())
+    {
+        return $this->createRequest('\Omnipay\PayTR\Message\CompleteRequest', $parameters);
     }
 
     public function getMerchantNo() {
@@ -71,6 +65,14 @@ class Gateway extends AbstractGateway {
 
     public function setMerchantSalt($value) {
         return $this->setParameter('merchantSalt', $value);
+    }
+
+    public function getNoInstallment() {
+        return $this->getParameter('no_installment');
+    }
+
+    public function setNoInstallment($value) {
+        return $this->setParameter('no_installment', $value);
     }
 
     public function getInstallment() {

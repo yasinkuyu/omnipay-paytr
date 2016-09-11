@@ -9,13 +9,13 @@ use Omnipay\Common\Message\RedirectResponseInterface;
 use Omnipay\Common\Exception\InvalidResponseException;
 
 /**
- * PayTR Response
+ * PayTR Complete Response
  *
  * (c) Yasin Kuyu
  * 2015, insya.com
  * http://www.github.com/yasinkuyu/omnipay-paytr
  */
-class Response extends AbstractResponse implements RedirectResponseInterface {
+class CompleteResponse extends AbstractResponse implements RedirectResponseInterface {
 
     /**
      * Constructor
@@ -26,6 +26,25 @@ class Response extends AbstractResponse implements RedirectResponseInterface {
      */
     public function __construct(RequestInterface $request, $data) {
         $this->request = $request;
+			
+		$post = $_POST;
+		
+		$hash = base64_encode(hash_hmac('sha256',$post["merchant_oid"]."F8JsrTSYn7GrzsIQ".$post["status"].$post["total_amount"],"wwNlhCPy4Gsu2613",true));
+		
+		$result = "";
+		
+		if( $hash != $post["hash"])
+			$result = 'PAYTR gerçersiz yanıt.';
+		
+		if( $post["status"] == 'success')
+		{
+			$result = "//ödeme başarılı: siparişi onayla, müşteriye mail/mesaj ile bilgi ver vs";
+		}
+		else
+		{
+			$result = $post["failed_reason_msg"];
+		}
+		
         try {
             $this->data = json_decode($data,1);
         } catch (\Exception $ex) {
