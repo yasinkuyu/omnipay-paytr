@@ -3,108 +3,72 @@
 namespace Omnipay\PayTR;
 
 use Omnipay\Common\AbstractGateway;
+use Omnipay\PayTR\Message\CompletePurchaseRequest;
+use Omnipay\PayTR\Message\FetchTransactionRequest;
+use Omnipay\PayTR\Message\PurchaseRequest;
+use Omnipay\PayTR\Message\RefundRequest;
 
 /**
- * PayTR Gateway
- * 
- * (c) Yasin Kuyu
- * 2016, insya.com
- * http://www.github.com/yasinkuyu/omnipay-paytr
+ * PayTR (iFrame API).
+ *
+ * purchase()            PayTR'den ödeme jetonu alır; yanıt müşteriyi PayTR ödeme sayfasına (iFrame adresi) götürür.
+ * acceptNotification()  PayTR'nin sunucudan sunucuya bildirimi (Bildirim URL): imza doğrulanır; ödemenin sonucu YALNIZ
+ *                       bununla kesinleşir. PayTR'ye düz "OK" yanıtı verilmelidir. completePurchase() aynısı.
+ * refund()              tam ya da kısmi iade; fetchTransaction() durum sorgusu.
+ *
+ * (c) Yasin Kuyu — https://github.com/yasinkuyu/omnipay-paytr
  */
-class Gateway extends AbstractGateway {
-
-    public function getName() {
+class Gateway extends AbstractGateway
+{
+    public function getName(): string
+    {
         return 'PayTR';
     }
 
-    public function getDefaultParameters() {
-        return array(
-            'merchantNo'   => '',
-            'merchantKey'  => '',
-            'merchantSalt' => '',
-            'installment'  => '9',
-            'no_installment'  => '0',
-            'ip' 		   => $_SERVER['REMOTE_ADDR'],
-            'currency' 	   => 'TRY',
-            'testMode'     => false
-        );
-    }
-
-    public function authorize(array $parameters = array()) {
-        return $this->createRequest('\Omnipay\PayTR\Message\AuthorizeRequest', $parameters);
-    }
- 
-    public function purchase(array $parameters = array()) {
-        return $this->createRequest('\Omnipay\PayTR\Message\PurchaseRequest', $parameters);
-    }
-  
-    public function complete(array $parameters = array())
+    public function getDefaultParameters(): array
     {
-        return $this->createRequest('\Omnipay\PayTR\Message\CompleteRequest', $parameters);
+        return [
+            'merchantId' => '',
+            'merchantKey' => '',
+            'merchantSalt' => '',
+            'testMode' => false,
+        ];
     }
 
-    public function getMerchantNo() {
-        return $this->getParameter('merchantNo');
+    /** Mağaza numarası */
+    public function getMerchantId() { return $this->getParameter('merchantId'); }
+    public function setMerchantId($value): self { return $this->setParameter('merchantId', $value); }
+
+    /** Mağaza parolası (merchant_key) */
+    public function getMerchantKey() { return $this->getParameter('merchantKey'); }
+    public function setMerchantKey($value): self { return $this->setParameter('merchantKey', $value); }
+
+    /** Mağaza gizli anahtarı (merchant_salt) */
+    public function getMerchantSalt() { return $this->getParameter('merchantSalt'); }
+    public function setMerchantSalt($value): self { return $this->setParameter('merchantSalt', $value); }
+
+    public function purchase(array $options = []): PurchaseRequest
+    {
+        return $this->createRequest(PurchaseRequest::class, $options);
     }
 
-    public function setMerchantNo($value) {
-        return $this->setParameter('merchantNo', $value);
+    public function acceptNotification(array $options = []): CompletePurchaseRequest
+    {
+        return $this->createRequest(CompletePurchaseRequest::class, $options);
     }
 
-    public function getMerchantKey() {
-        return $this->getParameter('merchantKey');
+    public function completePurchase(array $options = []): CompletePurchaseRequest
+    {
+        return $this->createRequest(CompletePurchaseRequest::class, $options);
     }
 
-    public function setMerchantKey($value) {
-        return $this->setParameter('merchantKey', $value);
+    public function refund(array $options = []): RefundRequest
+    {
+        return $this->createRequest(RefundRequest::class, $options);
     }
 
-    public function getMerchantSalt() {
-        return $this->getParameter('merchantSalt');
+    public function fetchTransaction(array $options = []): FetchTransactionRequest
+    {
+        return $this->createRequest(FetchTransactionRequest::class, $options);
     }
-
-    public function setMerchantSalt($value) {
-        return $this->setParameter('merchantSalt', $value);
-    }
-
-    public function getNoInstallment() {
-        return $this->getParameter('no_installment');
-    }
-
-    public function setNoInstallment($value) {
-        return $this->setParameter('no_installment', $value);
-    }
-
-    public function getInstallment() {
-        return $this->getParameter('installment');
-    }
-
-    public function setInstallment($value) {
-        return $this->setParameter('installment', $value);
-    }
-
-    public function getIp() {
-        return $this->getParameter('ip');
-    }
-
-    public function setIp($value) {
-        return $this->setParameter('ip', $value);
-    }
-
-    public function getOrderId() {
-        return $this->getParameter('orderid');
-    }
-
-    public function setOrderId($value) {
-        return $this->setParameter('orderid', $value);
-    }
-
-    public function getTransId() {
-        return $this->getParameter('transId');
-    }
-
-    public function setTransId($value) {
-        return $this->setParameter('transId', $value);
-    }
-
 }

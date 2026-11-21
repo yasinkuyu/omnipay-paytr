@@ -2,159 +2,82 @@
 
 namespace Omnipay\PayTR\Message;
 
-use Omnipay\Common\Message\AbstractRequest;
-
 /**
- * PayTR Purchase Request
- * 
- * (c) Yasin Kuyu
- * 2015, insya.com
- * http://www.github.com/yasinkuyu/omnipay-paytr
+ * Ödeme jetonu (get-token). Parametreler: amount, currency (TL, USD, EUR, GBP, RUB), transactionId (merchant_oid:
+ * yalnız harf ve rakam, her denemede benzersiz), returnUrl (merchant_ok_url), cancelUrl (merchant_fail_url, yoksa
+ * returnUrl), clientIp (zorunlu), card (e-posta zorunlu; ad, adres, telefon), items (sepet; yoksa tek satır),
+ * maxInstallment (0 = taksit yok, 2-12 = en fazla), timeoutLimit (dakika), lang (tr | en).
+ *
+ * İmza: paytr_token = base64(HMAC-SHA256(merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket +
+ * no_installment + max_installment + currency + test_mode + merchant_salt, merchant_key)).
  */
-class PurchaseRequest extends AbstractRequest {
-    
-    protected $endpoint = '';
-    protected $endpoints = array(
-        'purchase'   => 'https://www.paytr.com/odeme/api/get-token'
-    );
- 
-    protected $currencies = [
-        'TRY' => 'YT',
-        'USD' => 'US',
-        'EUR' => 'EU'
-    ];
+class PurchaseRequest extends AbstractRequest
+{
+    public function getMaxInstallment() { return $this->getParameter('maxInstallment'); }
+    public function setMaxInstallment($value) { return $this->setParameter('maxInstallment', $value); }
 
-    public function getData() {
+    public function getTimeoutLimit() { return $this->getParameter('timeoutLimit'); }
+    public function setTimeoutLimit($value) { return $this->setParameter('timeoutLimit', $value); }
 
-        //$this->validate('card');
-        //$this->getCard()->validate();
-		 
-        $currency             = $this->getCurrency();
+    public function getLang() { return $this->getParameter('lang'); }
+    public function setLang($value) { return $this->setParameter('lang', $value); }
 
-        $data['amount']       = $this->getAmountInteger();
-        $data['orderID']      = $this->getOrderId();
-        $data['currencyCode'] = $this->currencies[$currency];
-        $data['installment']  = $this->getInstallment();
- 
+    public function getData(): array
+    {
+        $this->validate('merchantId', 'merchantKey', 'merchantSalt', 'amount', 'transactionId', 'returnUrl', 'clientIp', 'card');
+        $card = $this->getCard();
+        $email = (string) $card->getEmail();
+        $max = max(0, min(12, (int) $this->getMaxInstallment()));
+        $currency = match (strtoupper((string) ($this->getCurrency() ?: 'TRY'))) {
+            'USD' => 'USD', 'EUR' => 'EUR', 'GBP' => 'GBP', 'RUB' => 'RUB', default => 'TL',
+        };
+
+        $data = [
+            'merchant_id' => (string) $this->getMerchantId(),
+            'user_ip' => (string) $this->getClientIp(),
+            'merchant_oid' => (string) $this->getTransactionId(),
+            'email' => $email,
+            'payment_amount' => (string) $this->getAmountInteger(),
+            'user_basket' => base64_encode((string) json_encode($this->basket(), JSON_UNESCAPED_UNICODE)),
+            'no_installment' => $max > 1 ? '0' : '1',
+            'max_installment' => $max > 1 ? (string) $max : '0',
+            'currency' => $currency,
+            'test_mode' => $this->getTestMode() ? '1' : '0',
+            'debug_on' => $this->getTestMode() ? '1' : '0',
+            'user_name' => mb_substr(trim((string) $card->getBillingName()) ?: 'Musteri', 0, 60),
+            'user_address' => mb_substr(trim($card->getBillingAddress1() . ' ' . $card->getBillingAddress2() . ' ' . $card->getBillingCity()) ?: '-', 0, 400),
+            'user_phone' => mb_substr((string) ($card->getBillingPhone() ?: '05000000000'), 0, 20),
+            'merchant_ok_url' => (string) $this->getReturnUrl(),
+            'merchant_fail_url' => (string) ($this->getCancelUrl() ?: $this->getReturnUrl()),
+            'timeout_limit' => (string) ((int) ($this->getTimeoutLimit() ?: 30)),
+            'lang' => (string) ($this->getLang() ?: 'tr'),
+        ];
+        $data['paytr_token'] = $this->sign($data['merchant_id'] . $data['user_ip'] . $data['merchant_oid'] . $data['email']
+            . $data['payment_amount'] . $data['user_basket'] . $data['no_installment'] . $data['max_installment']
+            . $data['currency'] . $data['test_mode'] . $this->getMerchantSalt());
+
         return $data;
     }
 
-    public function sendData($data) {
-  		 
-		$email             = $this->getCard()->getEmail();
-		$payment_amount    = $this->getAmountInteger();
+    /** [[ad, birim fiyat "12.50", adet], …]; yoksa ya da toplam tutmuyorsa tek satır */
+    private function basket(): array
+    {
+        $lines = [];
+        $sum = 0.0;
+        foreach ($this->getItems() ?? [] as $item) {
+            $qty = max(1, (int) $item->getQuantity());
+            $lines[] = [mb_substr((string) $item->getName(), 0, 120) ?: 'Urun', number_format((float) $item->getPrice(), 2, '.', ''), $qty];
+            $sum += round((float) $item->getPrice() * $qty, 2);
+        }
+        if (!$lines || abs($sum - (float) $this->getAmount()) >= 0.01) {
+            return [[(string) ($this->getDescription() ?: 'Siparis ' . $this->getTransactionId()), $this->getAmount(), 1]];
+        }
 
-		$no_installment    = 0; 
-		$max_installment   = $this->getInstallment(); 
-		$user_name         = $this->getCard()->getFirstName() . " " . $this->getCard()->getLastName(); 
-		$user_address      = $this->getCard()->getBillingAddress1() . " " . $this->getCard()->getBillingAddress2(); 
-		$user_phone        = $this->getCard()->getBillingPhone(); 
-
-		$user_basket       = base64_encode(json_encode(array(
-			array("Örnek ürün 1", "18.00", 1) // 1. ürün (Adı - Birim Fiyatı - Adet )
-		)));
-
-		$url 			       = "http" . (($_SERVER['SERVER_PORT'] == 443) ? "s://" : "://") . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-		$hash          		   = $this->getMerchantNo() . $this->getIp() . $this->getOrderId() . $email .$payment_amount .$user_basket.$no_installment.$max_installment;
-		$token       	       = base64_encode(hash_hmac('sha256',$hash.$this->getMerchantSalt(),$this->getMerchantKey(),true));
-
-		$post_vals = array(
-			'merchant_id'      => $this->getMerchantNo(),
-			'user_ip'          => $this->getIp(),
-			'merchant_oid'     => $this->getOrderId(),
-			'email'            => $email,
-			'payment_amount'   => $payment_amount,
-			'paytr_token'      => $token,
-			'user_basket'      => $user_basket,
-			'debug_on'         => $this->getTestMode() ? 1 : 0,
-			'no_installment'   => $no_installment,
-			'max_installment'  => $max_installment,
-			'user_name'        => $user_name,
-			'user_address'     => $user_address,
-			'user_phone'       => $user_phone,
-			'merchant_ok_url'  => $url."",
-			'merchant_fail_url'=> $url.""
-		);
-		
-		$ch = curl_init();
-		
-		curl_setopt($ch, CURLOPT_URL, $this->endpoints['purchase']);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, CURLOPT_POST, 1) ;
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $post_vals);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-		curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-		
-		$result = @curl_exec($ch);
-		  
-		curl_close($ch);
-
-        return $this->response = new Response($this, $result);
-    }
-    
-    public function getMerchantNo() {
-        return $this->getParameter('merchantNo');
+        return $lines;
     }
 
-    public function setMerchantNo($value) {
-        return $this->setParameter('merchantNo', $value);
+    public function sendData($data): PurchaseResponse
+    {
+        return $this->response = new PurchaseResponse($this, $this->post(self::TOKEN_URL, $data));
     }
- 
-    public function getMerchantKey() {
-        return $this->getParameter('merchantKey');
-    }
-
-    public function setMerchantKey($value) {
-        return $this->setParameter('merchantKey', $value);
-    }
- 
-    public function getMerchantSalt() {
-        return $this->getParameter('merchantSalt');
-    }
-
-    public function setMerchantSalt($value) {
-        return $this->setParameter('merchantSalt', $value);
-    }
-  
-    public function getInstallment() {
-        return $this->getParameter('installment');
-    }
-
-    public function setInstallment($value) {
-        return $this->setParameter('installment', $value);
-    }
-    public function getNoInstallment() {
-        return $this->getParameter('no_installment');
-    }
-
-    public function setNoInstallment($value) {
-        return $this->setParameter('no_installment', $value);
-    }
-
-    public function getIp() {
-        return $this->getParameter('ip');
-    }
-
-    public function setIp($value) {
-        return $this->setParameter('ip', $value);
-    }
-
-    public function getTransId() {
-        return $this->getParameter('transId');
-    }
-
-    public function setTransId($value) {
-        return $this->setParameter('transId', $value);
-    }
-
-    public function getOrderId() {
-        return $this->getParameter('orderid');
-    }
-
-    public function setOrderId($value) {
-        return $this->setParameter('orderid', $value);
-    }
-
 }
