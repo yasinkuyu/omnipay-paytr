@@ -1,0 +1,4 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"status":"success","is_test":1,"merchant_oid":"SIP1","return_amount":"50.00"}

@@ -1,0 +1,4 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"status":"success","payment_amount":"14990","payment_total":"14990","payment_date":"2026-11-21 23:00:00","currency":"TL","taksit":"0","returns":"0|0"}
